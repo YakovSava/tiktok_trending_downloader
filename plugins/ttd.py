@@ -2,10 +2,10 @@ import os
 import asyncio
 import concurrent.futures
 import ffmpeg
+
 from time import time
 from TikTokApi import TikTokApi
 from yt_dlp import YoutubeDL
-from asyncstdlib.itertools import islice
 from ffmpeg import Error
 from plugins.pdfm import generate_report
 
@@ -14,32 +14,36 @@ class TikTokError(Exception):
 
 class TikTokDownloader:
 
-    def init(self,
-             ms_token:str=None,
+    def __init__(self,
+             tt_token:str=None,
              output_folder:str="output",
              speed_ratio:float=1.0,
              resize_ratio:float=1.0,
              audio_filename:str="audio.mp3",
              report:str="report.pdf"
         ):
-        if ms_token is None:
-            raise TikTokError('Ms token not found!')
+        if tt_token is None:
+            raise TikTokError('TikTok token not found!')
         self._output = output_folder
         self._video_speed = speed_ratio
         self._video_resize = resize_ratio
         self.audio = audio_filename
-        self._ms_token = ms_token
+        self._tt_token = tt_token
         self._report_filename = report
 
     async def get_trending_videos(self, count:int=25):
         video_urls = []
         async with TikTokApi() as api:
             await api.create_sessions(
-                ms_tokens=[self._ms_token], num_sessions=1, sleep_after=3
+                ms_tokens=[self._tt_token], num_sessions=1, sleep_after=3
             )
-            async for video in islice(api.trending.videos(count=count), 0, count):
+            cnt = 0
+            async for video in api.trending.videos(count=count):
                 video_url = f"https://www.tiktok.com/@{video.author.username}/video/{video.id} "
                 video_urls.append(video_url)
+                if cnt == count:
+                    break
+                cnt += 1
         return video_urls
 
     def _download_video(self, video_url:str):
@@ -103,8 +107,9 @@ class TikTokDownloader:
                         self._modify_video(file_name)
                     except ffmpeg.Error as e:
                         exceptions.append(e)
-                        print(f"FFmpeg error!\n{e.stderr.decode('utf8')}\n")
+                        print(f"FFmpeg error!\n{e.stderr.decode('utf-8')}\n")
                     except Exception as e:
+                        raise
                         exceptions.append(e)
                         print(f"Error!\n{e}\n")
                     else:
@@ -123,4 +128,5 @@ class TikTokDownloader:
         except asyncio.CancelledError:
             return
         except Exception as e:
+            raise
             print(f"Error!\n{e}\n")

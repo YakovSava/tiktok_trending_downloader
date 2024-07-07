@@ -1,4 +1,4 @@
-install: compile
+install:
 	pip install -r requirments.txt
 	python -m playwright install
 
@@ -6,9 +6,8 @@ run:
 	python main.py
 
 compile:
-	cd binder_r
-	maturin build --release
-	cd ..
+	script.sh
 
-download: install
-	python downloader.py
+repair:
+	playwright uninstall --all
+	pip install --force-reinstall -v "playwright==1.40.0"
