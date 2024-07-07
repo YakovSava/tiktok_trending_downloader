@@ -1,0 +1,5 @@
+ffmpeg-python==0.2.0
+Pillow==9.5.0
+TikTokApi==6.2.0
+yt-dlp==2024.7.2
+asyncstdlib==3.12.4
